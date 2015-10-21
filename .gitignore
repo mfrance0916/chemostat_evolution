@@ -1,0 +1,5 @@
+# Ignore CSV Outputs
+population_statistics.csv
+post_gi_mutation.csv
+post_kill.csv
+subpopulations.csv
