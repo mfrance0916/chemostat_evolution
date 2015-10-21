@@ -345,20 +345,11 @@ class Population(object):
             pop_stat_out.write(str(self.time) + ',' + str(population_size) + ',' + str(lineage_count) + ',' + str(average_pop_fitness) + ',' + str(abres_pop_size) + ',' + str(abres_rel_abund) + ',' + str(average_ab_fitness) + '\n')
 
 
+if __name__ == '__main__':
+    exp_evol = Population(5000000,1000,0.0000005,0.0000005,10,1.5,0.00000006,0.000000006)
 
+    exp_evol.initialize()
 
+    exp_evol.update_time()
 
-
-
-
-exp_evol = Population(5000000,1000,0.0000005,0.0000005,10,1.5,0.00000006,0.000000006)
-
-exp_evol.initialize()
-
-exp_evol.update_time()
-
-#print exp_evol.fitness
-
-
-
-
+    #print exp_evol.fitness
