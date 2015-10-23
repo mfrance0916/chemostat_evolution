@@ -58,8 +58,8 @@ class Population(object):
 
         #opening file to store output data
         pop_stat_out = open("population_statistics.csv",'w')
-        pop_stat_out.write('time,pop_size,num_lineages,ave_fit,num_abres,abund_abres,ave_fit_abres\n')
-        pop_stat_out.write('0,' + str(self.pop_size) + ',1,1.0,0,0.0,0\n') 
+        pop_stat_out.write('time,gen,pop_size,num_lineages,ave_fit,num_abres,abund_abres,ave_fit_abres,shannon_diversity\n')
+        pop_stat_out.write('0,0,' + str(self.pop_size) + ',1,1.0,0,0.0,0,0\n') 
         pop_stat_out.close()
 
 
@@ -346,24 +346,24 @@ class Population(object):
             else:
                 average_ab_fitness = 0.0
 
+            shannon_diversity = 0.0
+            
+            for lineage in open('subpopulations.csv'):
 
-            pop_stat_out.write(str(self.time) + ',' + str(population_size) + ',' + str(lineage_count) + ',' + str(average_pop_fitness) + ',' + str(abres_pop_size) + ',' + str(abres_rel_abund) + ',' + str(average_ab_fitness) + '\n')
+                fin_rel_abund = float(lineage.split(',')[2])/population_size
+
+                shannon_diversity = shannon_diversity + (fin_rel_abund*np.log(fin_rel_abund))
+
+            shannon_diversity = shannon_diversity * -1
+
+            pop_stat_out.write(str(self.time) + ',' + str(self.time/self.generation_time) + ',' + str(population_size) + ',' + str(lineage_count) + ',' + str(average_pop_fitness) + ',' + str(abres_pop_size) + ',' + str(abres_rel_abund) + ',' + str(average_ab_fitness) + ',' + str(shannon_diversity) + '\n')
 
 
 
 
-
-
-
-
-exp_evol = Population(500000000,1000,0.0000005,0.0000005,10,1.5,0.00000006,0.000000006)
+exp_evol = Population(50000000,1000,0.0000005,0.0000005,10,1.5,0.00000006,0.000000006)
 
 exp_evol.initialize()
 
 exp_evol.update_time()
-
-#print exp_evol.fitness
-
-
-
 
