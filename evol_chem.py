@@ -3,6 +3,24 @@ import random
 import numpy as np
 import os
 
+def dist_fit_eff():
+
+    selective_effect = random.uniform(-1.025, 0.05)
+
+    if -1.25 < selective_effect < 0:
+        
+        selective_effect = selective_effect * selective_effect * -1.0
+
+    if selective_effect < -1.0:
+
+        selective_effect = -1.0
+
+    if selective_effect > 0.0:
+
+        selective_effect = np.random.exponential(scale=0.02) - 0.075 
+
+    return selective_effect
+
 class Population(object):
     
     ## defines the following parameters that are needed for the simulation
@@ -142,10 +160,10 @@ class Population(object):
                     new_mutant_id = self.subpop_id_num
 
                     #calculating the fitness effect of the new mutatation, this is a simple model for the fitness of effect of new mutations and will need to be improved by a real model
-                    selective_effect = random.uniform(-1, 0.1)
+                    selective_eff = dist_fit_eff()
 
                     #determining the new mutant fitness as the addition of the selective effect to the ancestors fitness
-                    new_mutant_fitness = subpop_fitness + selective_effect
+                    new_mutant_fitness = subpop_fitness + selective_eff
 
                     #taking care of negative fitness cases
                     if new_mutant_fitness < 0.0:
@@ -272,10 +290,10 @@ class Population(object):
                         new_mutant_id = self.subpop_id_num
 
                         #calculating the fitness effect of the new mutatation, this is a simple model for the fitness of effect of new mutations and will need to be improved by a real model
-                        selective_effect = random.uniform(-1, 0.1)
+                        selective_eff = dist_fit_eff()
 
                         #determining the new mutant fitness as the addition of the selective effect to the ancestors fitness
-                        new_mutant_fitness = subpop_fitness + selective_effect
+                        new_mutant_fitness = subpop_fitness + selective_eff
 
                         #taking care of negative fitness cases
                         if new_mutant_fitness < 0.0:
