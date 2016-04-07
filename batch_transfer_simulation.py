@@ -5,7 +5,7 @@ import os
 
 def dist_fit_eff():
 
-    selective_effect = random.uniform(-1.025, 0.05)
+    selective_effect = random.uniform(-1.015, 0.05)
 
     if -1.25 < selective_effect < 0:
         
@@ -74,7 +74,7 @@ class Population(object):
 
         #opening file to store output data
         pop_stat_out = open("population_statistics.csv",'w')
-        pop_stat_out.write('time,gen,pop_size,num_lineages,ave_fit,abund_lin\n')
+        pop_stat_out.write('gen,pop_size,ave_fit,maxfit\n')
         pop_stat_out.write('0,0,' + str(self.pop_size) + ',1,1.0,1\n') 
         pop_stat_out.close()
 
@@ -108,7 +108,7 @@ class Population(object):
                 if subpop_count > 0:
                     #random death process simulated on the subpopulation as a draw from a binomial distribution with p = probability of being transfered and n = subpopulation count
                     num_survivors = np.random.binomial(subpop_count,self.survive_prob)
-                    print num_survivors
+                    #print num_survivors
 
                     #writing out the lineage to the post transfer file as long as the 
                     if num_survivors > 0:    
@@ -151,17 +151,18 @@ class Population(object):
                         maxfit = currentfit
 
 
-                print total_pop_size
-                print total_fitness
+                #print total_pop_size
+                #print total_fitness
 
                 average_fitness = total_fitness/total_pop_size
 
                 num_progeny = total_pop_size * 2
 
-                print average_fitness
+                #print average_fitness
                 
                 current_generation += 1
-                print current_generation
+                
+                
 
 
 
@@ -351,24 +352,46 @@ class Population(object):
         
             pop_stat_out = open("population_statistics.csv",'a')
 
-            for subpop in open()
+            total_pop_size = 0
+            total_fitness = 0.0
+            currentfit = 0.0
+            maxfit = 0.0
 
-            subpop = subpop.rstrip('\n')
+            print current_generation
+
+            for subpop in open('subpopulations.csv'):
+
+                subpop = subpop.rstrip('\n')
+                    
+                #pulling out the different subpopulation variables
+                subpop_id = subpop.split(',')[0]
+                subpop_fitness = float(subpop.split(',')[1])
+                subpop_count = int(subpop.split(',')[2])
+
+                total_pop_size = total_pop_size + int(subpop.split(',')[2])
+
+                #adding up fitness as the multiple of individual fitness and the number of individuals
+                total_fitness = total_fitness + float(subpop.split(',')[1])*int(subpop.split(',')[2])
+
+                #setting current fitness which will be used to identify the best individual lineage in hte population
+                currentfit = float(subpop.split(',')[1])
+
+
+                #determining the best organism at the time
+                if currentfit > maxfit:
+                    maxfit = currentfit
+
+            average_fitness = float(total_fitness)/float(total_pop_size)
+
+            #print average_fitness
+            #print total_pop_size
+
+            pop_stat_out.write(str(current_generation) + "," + str(total_pop_size) + "," + str(average_fitness) + "," + str(maxfit) + "\n")
+
+            pop_stat_out.close()
+
                 
-                pulling out the different subpopulation variables
-        #        subpop_id = subpop.split(',')[0]
-        #        subpop_fitness = float(subpop.split(',')[1])
-        #        subpop_count = int(subpop.split(',')[2])
-
-                #generation = open('post_kill.csv','w')
-
-                #count up total fitness, total population size, and then average fitness
-
-
-                #print subpop_count
-                #if subpop_count > 0:
-
-exp_evol = Population(500000,10,10,100,24,1,0.0006,0.00015)
+exp_evol = Population(500000000,10,10,500,24,1,0.0006,0.00015)
 
 exp_evol.initialize()
 

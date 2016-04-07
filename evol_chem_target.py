@@ -381,7 +381,7 @@ class Population(object):
 
 
 
-exp_evol = Population(500000,1000,0.0006,0.00015,10,1.5,0.00000012,0.0000000055,2.0)
+exp_evol = Population(500000,1000,0.0006,0.00015,10,0.15,0.00000012,0.0000000055,2.0)
 
 exp_evol.initialize()
 

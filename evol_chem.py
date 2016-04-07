@@ -5,7 +5,7 @@ import os
 
 def dist_fit_eff():
 
-    selective_effect = random.uniform(-1.025, 0.05)
+    selective_effect = random.uniform(-1.015, 0.05)
 
     if -1.25 < selective_effect < 0:
         
@@ -76,8 +76,8 @@ class Population(object):
 
         #opening file to store output data
         pop_stat_out = open("population_statistics.csv",'w')
-        pop_stat_out.write('time,gen,pop_size,num_lineages,ave_fit,num_abres,abund_abres,ave_fit_abres,shannon_diversity,abund_lin\n')
-        pop_stat_out.write('0,0,' + str(self.pop_size) + ',1,1.0,0,0.0,0,0,1\n') 
+        pop_stat_out.write('time,gen,pop_size,num_lineages,ave_fit,num_abres,abund_abres,ave_fit_abres,abund_lin\n')
+        pop_stat_out.write('0,0,' + str(self.pop_size) + ',1,1.0,0,0.0,0,1\n') 
         pop_stat_out.close()
 
 
@@ -364,28 +364,21 @@ class Population(object):
                 average_ab_fitness = float(abres_fitness)/abres_pop_size
             else:
                 average_ab_fitness = 0.0
-
-            shannon_diversity = 0.0
             
             for lineage in open('subpopulations.csv'):
 
                 fin_rel_abund = float(lineage.split(',')[2])/population_size
                 
-                shannon_diversity = shannon_diversity + (fin_rel_abund*np.log(fin_rel_abund))
-
                 if fin_rel_abund > 0.001:
 
                     abund_lin += 1
 
-
-            shannon_diversity = shannon_diversity * -1.0
-
-            pop_stat_out.write(str(self.time) + ',' + str(self.time/self.generation_time) + ',' + str(population_size) + ',' + str(lineage_count) + ',' + str(average_pop_fitness) + ',' + str(abres_pop_size) + ',' + str(abres_rel_abund) + ',' + str(average_ab_fitness) + ',' + str(shannon_diversity) + ',' + str(abund_lin) + '\n')
+            pop_stat_out.write(str(self.time) + ',' + str(self.time/self.generation_time) + ',' + str(population_size) + ',' + str(lineage_count) + ',' + str(average_pop_fitness) + ',' + str(abres_pop_size) + ',' + str(abres_rel_abund) + ',' + str(average_ab_fitness) + ',' + str(abund_lin) + '\n')
 
 
 
 
-exp_evol = Population(50000000,1000,0.0006,0.00015,10,1.5,0.00000012,0.0000000055)
+exp_evol = Population(4800000,500,0.0006,0.00015,10,2.85,0.00000012,0.0000000055)
 
 exp_evol.initialize()
 
