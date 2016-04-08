@@ -57,7 +57,7 @@ class Population(object):
         #creating a csv file that will keep track of all of the subpopulations
 
         subpopulations = open('subpopulations.csv','w')
-        subpopulations.write("1,1.0,%s" %(self.pop_size))
+        subpopulations.write("1,1.0,%s,1" %(self.pop_size))
         subpopulations.close()
         
         #setting the current generation to 0
@@ -74,7 +74,7 @@ class Population(object):
 
         #opening file to store output data
         pop_stat_out = open("population_statistics.csv",'w')
-        pop_stat_out.write('gen,pop_size,ave_fit,maxfit\n')
+        pop_stat_out.write('gen,pop_size,ave_fit,maxfit,abund_lin\n')
         pop_stat_out.write('0,0,' + str(self.pop_size) + ',1,1.0,1\n') 
         pop_stat_out.close()
 
@@ -103,6 +103,7 @@ class Population(object):
                 subpop_id = subpop.split(',')[0]
                 subpop_fitness = float(subpop.split(',')[1])
                 subpop_count = int(subpop.split(',')[2])
+                subpop_genform = int(subpop.split(",")[3])
 
                 #implementing random death process only if there is an extant member of the lineage, otherwise drop 
                 if subpop_count > 0:
@@ -112,7 +113,7 @@ class Population(object):
 
                     #writing out the lineage to the post transfer file as long as the 
                     if num_survivors > 0:    
-                        post_transfer.write(subpop_id + ',' + str(subpop_fitness) + ',' + str(num_survivors) + '\n')
+                        post_transfer.write(subpop_id + ',' + str(subpop_fitness) + ',' + str(num_survivors) + ',' + str(subpop_genform) + '\n')
 
             #closing the post transfer file so that it can be used in a loop later
             post_transfer.close()
@@ -179,6 +180,7 @@ class Population(object):
                     subpop_id = subpop_post.split(',')[0]
                     subpop_fitness = float(subpop_post.split(',')[1])
                     subpop_count = int(subpop_post.split(',')[2])
+                    subpop_genform = int(subpop_post.split(',')[3])
 
                     #determining the number of new growth independent mutants to generate
                     new_gi_mutants = np.random.binomial(subpop_count,self.gi_mut_rate)
@@ -333,7 +335,7 @@ class Population(object):
 
 
                     #writing out the information for the new mutants to a temporary file
-                    new_subpopulations.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + '\n')
+                    new_subpopulations.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + "," + str(current_generation) + "," + '\n')
                     
                     #writing the original lineages data to the file
                 new_subpopulations.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + '\n')
