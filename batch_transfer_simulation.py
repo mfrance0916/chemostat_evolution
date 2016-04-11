@@ -328,7 +328,7 @@ class Population(object):
                 subpop_id = subpop_post.split(',')[0]
                 subpop_fitness = float(subpop_post.split(',')[1])
                 subpop_count = int(subpop_post.split(',')[2])
-                subpop_cycleform = int(subpop_post.split(',')[4])
+                subpop_cycleform = int(subpop_post.split(',')[3])
                 subpop_genform = int(subpop_post.split(',')[4])
                 subpop_barcode = str(subpop_post.split(',')[5])
 
@@ -429,6 +429,8 @@ class Population(object):
             num_abund_lineages = 0
 
             for subpop in open('subpopulations.csv'):
+
+                subpop = subpop.rstrip('\n')
                 
                 subpop_id = subpop.split(',')[0]
                 subpop_fitness = float(subpop.split(',')[1])
@@ -457,7 +459,7 @@ class Population(object):
             top_lineages.close()
 
                 
-exp_evol = Population(5000000,10,10,500,24,1,0.0006,0.00015)
+exp_evol = Population(50000000,10,10,1000,24,1,0.0006,0.00015)
 
 exp_evol.initialize()
 
