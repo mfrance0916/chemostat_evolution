@@ -5,7 +5,7 @@ import os
 
 def dist_fit_eff():
 
-    selective_effect = random.uniform(-1.015, 0.05)
+    selective_effect = random.uniform(-1.025, 0.05)
 
     if -1.25 < selective_effect < 0:
         
@@ -17,7 +17,7 @@ def dist_fit_eff():
 
     if selective_effect > 0.0:
 
-        selective_effect = np.random.exponential(scale=0.03) - 0.06 
+        selective_effect = np.random.exponential(scale=0.025) - 0.07 
 
     return selective_effect
 
@@ -33,7 +33,7 @@ class Population(object):
     ## gd_ab_mut_rate = rate of mutation towards antibiotic resistance dependent on growth
     ## gi_ab_mut_rate = rate of mutation towards antibiotic resistance independent of growth
 
-    def __init__(self, pop_dens, n_generations, gd_mut_rate, gi_mut_rate, volume, flow_rate, gd_ab_mut_rate, gi_ab_mut_rate):
+    def __init__(self, pop_dens, n_generations, gd_mut_rate, gi_mut_rate, volume, flow_rate, gd_ab_mut_rate, gi_ab_mut_rate,target):
         self.pop_dens = pop_dens
         self. n_generations = n_generations
         self.gd_mut_rate = gd_mut_rate
@@ -42,6 +42,7 @@ class Population(object):
         self.flow_rate = flow_rate
         self.gd_ab_mut_rate = gd_ab_mut_rate
         self.gi_ab_mut_rate = gi_ab_mut_rate
+        self.target = target
 
     def initialize(self):
         
@@ -55,7 +56,7 @@ class Population(object):
         #creating a csv file that will keep track of all of the subpopulations
 
         subpopulations = open('subpopulations.csv','w')
-        subpopulations.write("1,1.0,%s,0" %(self.pop_size))
+        subpopulations.write("1,1.0,%s,0,0,0" %(self.pop_size))
         subpopulations.close()
         
         #calculating the generation time as the natural log of 2 over the dilution rate (flow over volume)
@@ -82,14 +83,24 @@ class Population(object):
 
 
 
+
+
     def update_time(self):
+        
         pop_stat_out = open("population_statistics.csv",'a')
+
+        top_lineages = open("top_lineages.csv",'a')
+        past_generations = list()
 
         #looping through until time is greater than or equal to the stop time as determiend by the generation time adn the number of generations requested
 
         while self.time < self.stop_time:
             
             self.time += 1
+
+            current_gen = int(self.time/self.generation_time)
+            print current_gen
+
             #print self.time
             
             #ENACTING THE KILL THROUGH RANDOM DEATH PROCESS using a draw from a binomial distribution and tallying up the remaining fitness
@@ -109,20 +120,22 @@ class Population(object):
                 subpop_fitness = float(subpop.split(',')[1])
                 subpop_count = int(subpop.split(',')[2])
                 subpop_abstatus = subpop.split(',')[3]
+                subpop_genform = int(subpop.split(",")[4])
+                subpop_barcode = str(subpop.split(",")[5])
 
                 #print subpop_count
 
                 
                 if subpop_count > 0:
                     #random death process simulated on the subpopulation as a draw from a binomial distribution with p = probability of surviving and n = subpopulation count
-                    num_survivors = np.random.binomial(subpop_count,self.survive_prob)
+                    num_survivors = np.random.poisson(subpop_count*self.survive_prob)
                     
                     #incrimenting the total number of kills
                     num_kills = num_kills + (subpop_count - num_survivors)
 
                     #writing out to the kill file
                     if num_survivors > 0:    
-                        post_kill.write(subpop_id + ',' + str(subpop_fitness) + ',' + str(num_survivors) + ',' + subpop_abstatus + '\n')
+                        post_kill.write(subpop_id + ',' + str(subpop_fitness) + ',' + str(num_survivors) + ',' + subpop_abstatus + ',' + str(subpop_genform) + ',' + str(subpop_barcode) + '\n')
 
             
             #ENACTING MUTATIONAL PROCESS THAT IS INDEPENDENT OF GROWTH
@@ -142,10 +155,12 @@ class Population(object):
                 subpop_fitness = float(subpop_post.split(',')[1])
                 subpop_count = int(subpop_post.split(',')[2])
                 subpop_abstatus = subpop_post.split(',')[3]
+                subpop_genform = int(subpop_post.split(",")[4])
+                subpop_barcode = str(subpop_post.split(",")[5])
 
 
                 #determining the number of new growth independent mutants to generate
-                new_gi_mutants = np.random.binomial(subpop_count,self.gi_mut_rate)
+                new_gi_mutants = np.random.poisson(subpop_count*self.gi_mut_rate)
 
                 #adjusting the ancestral subpopulation size
                 subpop_count = subpop_count - new_gi_mutants
@@ -176,8 +191,12 @@ class Population(object):
                     #new mutant inherits the ancestors antibiotic status
                     new_mutant_abstatus = subpop_abstatus
 
+                    new_mutant_genform = current_gen
+
+                    new_mutant_barcode = str(subpop_barcode) + ':' + str(new_mutant_id)
+
                     #writing out the information for the new mutants to a temporary file
-                    post_gi_mutation.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + ',' + new_mutant_abstatus + '\n')
+                    post_gi_mutation.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + ',' + new_mutant_abstatus + ',' + str(new_mutant_genform) + ',' + str(new_mutant_barcode) + '\n')
 
 
                 #determining the number of new ANTIBIOTIC resistant mutants generated by GI mutations
@@ -185,7 +204,7 @@ class Population(object):
                 if subpop_abstatus == '0':
 
                     #new mutants drawn from a binomial with mutation rate as prob and number of trials equal to the subpop size
-                    new_gi_ab_mutants = np.random.binomial(subpop_count,self.gi_ab_mut_rate)
+                    new_gi_ab_mutants = np.random.poisson(subpop_count*self.gi_ab_mut_rate)
                     #print new_gi_ab_mutants
 
                     #adjusting the count for the ancestral population
@@ -200,12 +219,16 @@ class Population(object):
                         #assigning the new number to the ab resistant population
                         new_mutant_id = self.subpop_id_num
 
+                        new_mutant_genform = current_gen
+
+                        new_mutant_barcode = str(subpop_barcode) + ':' + str(new_mutant_id)
+
                         #writing out the new lineages data into the file, because all mutants are identical in this model they can 
-                        post_gi_mutation.write(str(new_mutant_id) + ',' + str(subpop_fitness) + ',' + str(new_gi_ab_mutants) + ',' + '1' + '\n')
+                        post_gi_mutation.write(str(new_mutant_id) + ',' + str(subpop_fitness) + ',' + str(new_gi_ab_mutants) + ',' + '1' + ',' + str(new_mutant_genform) + ',' + str(new_mutant_barcode) + '\n')
 
 
                 #writing the original lineages data to the file
-                post_gi_mutation.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + ',' + str(subpop_abstatus) + '\n')
+                post_gi_mutation.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + ',' + str(subpop_abstatus) + ',' + str(subpop_genform) + ',' + str(subpop_barcode) + '\n')
 
 
             post_gi_mutation.close()
@@ -252,12 +275,26 @@ class Population(object):
                 subpop_fitness = float(lineage.split(',')[1])
                 subpop_count = int(lineage.split(',')[2])
                 subpop_abstatus = lineage.split(',')[3]
+                subpop_genform = int(lineage.split(",")[4])
+                subpop_barcode = str(lineage.split(",")[5])
+
 
                 
                 #SELECTION THINGS WITH HIGHER FITNESS DO BETTER
 
+                #NO TARGETS VERSION
                 #calculating the relative fitness as the division of the lineage fitness by the average fitness
-                rel_fitness = subpop_fitness/average_fitness
+                #rel_fitness = subpop_fitness/average_fitness
+                #rel_abundance = float(subpop_count)/float(total_pop_size)
+                
+
+                #calculating the probability to divide as the multiplication of the number of kills divided by the total population size times the relative fitness
+                #prob_divide = rel_fitness*float(num_kills)/total_pop_size
+
+                #TARGET VERSION
+                #calculating the relative fitness as the division of the lineage fitness by the average fitness
+                rel_fitness = (self.target-abs(self.target - subpop_fitness))/(average_fitness)
+
                 rel_abundance = float(subpop_count)/float(total_pop_size)
                 
 
@@ -269,7 +306,7 @@ class Population(object):
                     prob_divide = 0.0
 
                 #determining the number of cellular divisions generated by the lineage
-                divisions = np.random.binomial(subpop_count,prob_divide)
+                divisions = np.random.poisson(subpop_count*prob_divide)
 
                 subpop_count = subpop_count + divisions
 
@@ -277,7 +314,7 @@ class Population(object):
                     daughters = divisions * 2
 
                     #GROWTH DEPENDENT MUTATION
-                    new_gd_mutants = np.random.binomial(daughters,self.gd_mut_rate)
+                    new_gd_mutants = np.random.poisson(daughters*self.gd_mut_rate)
 
                     subpop_count = subpop_count - new_gd_mutants
 
@@ -306,13 +343,17 @@ class Population(object):
                         #new mutant inherits the ancestors antibiotic status
                         new_mutant_abstatus = subpop_abstatus
 
+                        new_mutant_genform = current_gen
+
+                        new_mutant_barcode = str(subpop_barcode) + ':' + str(new_mutant_id)
+
                         #writing out the data to the post growth file
-                        post_growth.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + ',' + new_mutant_abstatus + '\n')
+                        post_growth.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + ',' + new_mutant_abstatus + ',' + str(new_mutant_genform) + ',' + str(new_mutant_barcode) + '\n')
 
                     if subpop_abstatus == '0':
 
                         #new mutants drawn from a binomial with mutation rate as prob and number of trials equal to the subpop size
-                        new_gd_ab_mutants = np.random.binomial(subpop_count,self.gd_ab_mut_rate)
+                        new_gd_ab_mutants = np.random.poisson(subpop_count*self.gd_ab_mut_rate)
             
                         #adjusting the count for the ancestral population
                         subpop_count = subpop_count - new_gd_ab_mutants
@@ -326,59 +367,87 @@ class Population(object):
                             #assigning the new number to the ab resistant population
                             new_mutant_id = self.subpop_id_num
 
+                            new_mutant_genform = current_gen
+
+                            new_mutant_barcode = str(subpop_barcode) + ':' + str(new_mutant_id)
+
+
+
                             #writing out the new lineages data into the file, because all mutants are identical in this model they can 
-                            post_growth.write(str(new_mutant_id) + ',' + str(subpop_fitness) + ',' + str(new_gd_ab_mutants) + ',' + '1' + '\n')
+                            post_growth.write(str(new_mutant_id) + ',' + str(subpop_fitness) + ',' + str(new_gd_ab_mutants) + ',' + '1' + ',' + str(new_mutant_genform) + ',' + str(new_mutant_barcode) + '\n')
 
                 #writing the original lineages data to the file
-                post_growth.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + ',' + str(subpop_abstatus) + '\n')
+                post_growth.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + ',' + str(subpop_abstatus) + ',' + str(subpop_genform) + ',' + str(subpop_barcode) + '\n')
 
             post_growth.close()
 
-            #storing output information for plotting later
-            
-            population_size = 0
-            total_pop_fitness = 0.0
-            abres_pop_size = 0
-            abres_fitness = 0.0
-            lineage_count = 0
-            abund_lin = 0
+            if int(self.time/self.generation_time) % 10 == 0:
 
-            for lineage in open('subpopulations.csv'):
-
-                lineage = lineage.rstrip('\n')
-
-                lineage_count += 1
-
-                population_size = population_size + int(lineage.split(',')[2])
-
-                if lineage.split(',')[3] == '1':
-                    abres_pop_size = abres_pop_size + int(lineage.split(',')[2])
-                    abres_fitness = abres_fitness + float(lineage.split(',')[1])*int(lineage.split(',')[2])
-
-                total_pop_fitness = total_pop_fitness + float(lineage.split(',')[1])*int(lineage.split(',')[2])
-
-            average_pop_fitness = float(total_pop_fitness)/population_size
-            abres_rel_abund = float(abres_pop_size)/population_size
-            
-            if abres_pop_size > 0:
-                average_ab_fitness = float(abres_fitness)/abres_pop_size
-            else:
-                average_ab_fitness = 0.0
-            
-            for lineage in open('subpopulations.csv'):
-
-                fin_rel_abund = float(lineage.split(',')[2])/population_size
+                if int(self.time/self.generation_time) in past_generations:
+                    continue
                 
-                if fin_rel_abund > 0.001:
-
-                    abund_lin += 1
-
-            pop_stat_out.write(str(self.time) + ',' + str(self.time/self.generation_time) + ',' + str(population_size) + ',' + str(lineage_count) + ',' + str(average_pop_fitness) + ',' + str(abres_pop_size) + ',' + str(abres_rel_abund) + ',' + str(average_ab_fitness) + ',' + str(abund_lin) + '\n')
+                past_generations.append(int(self.time/self.generation_time))
 
 
 
+                #storing output information for plotting later
+            
+                population_size = 0
+                total_pop_fitness = 0.0
+                abres_pop_size = 0
+                abres_fitness = 0.0
+                lineage_count = 0
+                abund_lin = 0
 
-exp_evol = Population(4800000,500,0.0006,0.00015,10,2.85,0.00000012,0.0000000055)
+                for lineage in open('subpopulations.csv'):
+
+                    lineage = lineage.rstrip('\n')
+
+                    lineage_count += 1
+
+                    population_size = population_size + int(lineage.split(',')[2])
+
+                    if lineage.split(',')[3] == '1':
+                        abres_pop_size = abres_pop_size + int(lineage.split(',')[2])
+                        abres_fitness = abres_fitness + float(lineage.split(',')[1])*int(lineage.split(',')[2])
+
+                    total_pop_fitness = total_pop_fitness + float(lineage.split(',')[1])*int(lineage.split(',')[2])
+
+                average_pop_fitness = float(total_pop_fitness)/population_size
+                abres_rel_abund = float(abres_pop_size)/population_size
+            
+                if abres_pop_size > 0:
+                    average_ab_fitness = float(abres_fitness)/abres_pop_size
+                else:
+                    average_ab_fitness = 0.0
+            
+                for subpop in open('subpopulations.csv'):
+                    
+                    subpop = subpop.rstrip('\n')
+                
+                    subpop_id = subpop.split(',')[0]
+                    subpop_fitness = float(subpop.split(',')[1])
+                    subpop_count = int(subpop.split(',')[2])
+                    subpop_abstatus = int(subpop.split(',')[3])
+                    subpop_genform = int(subpop.split(',')[4])                
+                    subpop_barcode = str(subpop.split(',')[5])
+
+                    rel_abund = float(subpop_count)/population_size
+                
+                    if rel_abund > 0.001:
+
+                        abund_lin += 1
+
+                        subpop_rel_fitness = subpop_fitness/average_pop_fitness
+                        top_lineages.write(str(current_gen) + "," + str(subpop_id) + "," + str(rel_abund) + "," + str(subpop_count) + "," + str(subpop_fitness) + "," + str(subpop_rel_fitness) + "," + str(subpop_genform) + "," + str(subpop_barcode) + "\n")
+
+
+                pop_stat_out.write(str(self.time) + ',' + str(self.time/self.generation_time) + ',' + str(population_size) + ',' + str(lineage_count) + ',' + str(average_pop_fitness) + ',' + str(abres_pop_size) + ',' + str(abres_rel_abund) + ',' + str(average_ab_fitness) + ',' + str(abund_lin) + '\n')
+
+
+
+
+exp_evol = Population(48000,500,0.0006,0.00015,10,2.85,0.00000012,0.0000000055,2.5)
 
 exp_evol.initialize()
 
