@@ -75,8 +75,8 @@ class Population(object):
 
         #opening file to store output data
         pop_stat_out = open("population_statistics.csv",'w')
-        pop_stat_out.write('gen,pop_size,ave_fit,maxfit,abund_lin\n')
-        pop_stat_out.write('0,0,' + str(self.pop_size) + ',1,1.0,1\n') 
+        pop_stat_out.write('gen,pop_size,lineage_count,ave_fit,maxfit,abund_lin\n')
+        pop_stat_out.write('0,0,' + str(self.pop_size) + ',1,1,1.0,1\n') 
         pop_stat_out.close()
 
         top_lineages = open("top_lineages.csv","w")
@@ -119,7 +119,7 @@ class Population(object):
 
                 #implementing random death process only if there is an extant member of the lineage, otherwise drop 
                 if subpop_count > 0:
-                    #random death process simulated on the subpopulation as a draw from a poisson distribution with p = probability of being transfered and n = subpopulation count
+                    #random death process simulated on the subpopulation as a draw from a binomial distribution with p = probability of being transfered and n = subpopulation count
                     num_survivors = np.random.poisson(subpop_count*self.survive_prob)
                     #print num_survivors
 
@@ -143,7 +143,6 @@ class Population(object):
                 total_pop_size = 0
                 total_fitness = 0.0
                 currentfit = 0.0
-                maxfit = 0.0
 
                 #looping through lineages in the post transfer file
                 for lineage in open('post_transfer.csv'):
@@ -155,19 +154,8 @@ class Population(object):
                     total_pop_size = total_pop_size + int(lineage.split(',')[2])
 
                     #adding up fitness as the multiple of individual fitness and the number of individuals
-                    total_fitness = total_fitness + float(lineage.split(',')[1])*int(lineage.split(',')[2])
+                    total_fitness = total_fitness + (self.target - (self.target- float(lineage.split(',')[1])))*int(lineage.split(',')[2])
 
-                    #setting current fitness which will be used to identify the best individual lineage in hte population
-                    currentfit = float(lineage.split(',')[1])
-
-
-                    #determining the best organism at the time
-                    if currentfit > maxfit:
-                        maxfit = currentfit
-
-
-                #print total_pop_size
-                #print total_fitness
 
                 average_fitness = total_fitness/total_pop_size
 
@@ -395,6 +383,7 @@ class Population(object):
             total_fitness = 0.0
             currentfit = 0.0
             maxfit = 0.0
+            lineage_count = 0
 
             print current_generation
 
@@ -410,14 +399,10 @@ class Population(object):
                 total_pop_size = total_pop_size + int(subpop.split(',')[2])
 
                 #adding up fitness as the multiple of individual fitness and the number of individuals
-                total_fitness = total_fitness + float(subpop.split(',')[1])*int(subpop.split(',')[2])
-
-                #setting current fitness which will be used to identify the best individual lineage in hte population
-                currentfit = float(subpop.split(',')[1])
-
+                total_fitness = total_fitness + (self.target-abs(self.target - subpop_fitness))*subpop_count
 
                 #determining the best organism at the time
-                if currentfit > maxfit:
+                if (self.target-abs(self.target - subpop_fitness)) > maxfit:
                     maxfit = currentfit
 
             average_fitness = float(total_fitness)/float(total_pop_size)
@@ -427,6 +412,8 @@ class Population(object):
             for subpop in open('subpopulations.csv'):
 
                 subpop = subpop.rstrip('\n')
+
+                lineage_count += 1
                 
                 subpop_id = subpop.split(',')[0]
                 subpop_fitness = float(subpop.split(',')[1])
@@ -439,7 +426,7 @@ class Population(object):
 
                     num_abund_lineages += 1
 
-                    subpop_rel_fitness = subpop_fitness/average_fitness
+                    subpop_rel_fitness = (self.target-abs(self.target - subpop_fitness))/average_fitness
                     subpop_rel_abund = float(subpop_count)/float(total_pop_size)
 
                     top_lineages.write(str(current_generation) + "," + str(subpop_id) + "," + str(subpop_rel_abund) + "," + str(subpop_count) + "," + str(subpop_fitness) + "," + str(subpop_rel_fitness) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + "\n")
@@ -448,7 +435,7 @@ class Population(object):
             #print average_fitness
             #print total_pop_size
 
-            pop_stat_out.write(str(current_generation) + "," + str(total_pop_size) + "," + str(average_fitness) + "," + str(maxfit) + "," + str(num_abund_lineages) + "\n")
+            pop_stat_out.write(str(current_generation) + "," + str(total_pop_size)  + ',' + str(lineage_count) + "," + str(average_fitness) + "," + str(maxfit) + "," + str(num_abund_lineages) + "\n")
 
             pop_stat_out.close()
 
@@ -456,7 +443,7 @@ class Population(object):
 
 #def __init__(self, pop_dens, volume, generations_per_day, total_generations, batch_length,generation_length, gd_mut_rate, gi_mut_rate):   
 
-exp_evol = Population(3000000000,5,10,1000,24,1,0.0006,0.00015,2.5)
+exp_evol = Population(3000000,5,10,1000,24,1,0.0006,0.00015,2.5)
 
 exp_evol.initialize()
 

@@ -248,7 +248,7 @@ class Population(object):
 
                 total_pop_size = total_pop_size + int(lineage.split(',')[2])
 
-                total_fitness = total_fitness + float(lineage.split(',')[1])*int(lineage.split(',')[2])
+                total_fitness = total_fitness + (self.target - abs(self.target-float(lineage.split(',')[1])))*int(lineage.split(',')[2])
 
                 average_fitness = total_fitness/total_pop_size
 
@@ -409,9 +409,9 @@ class Population(object):
 
                     if lineage.split(',')[3] == '1':
                         abres_pop_size = abres_pop_size + int(lineage.split(',')[2])
-                        abres_fitness = abres_fitness + float(lineage.split(',')[1])*int(lineage.split(',')[2])
+                        abres_fitness = abres_fitness + (self.target - abs(self.target-float(lineage.split(',')[1])))*int(lineage.split(',')[2])
 
-                    total_pop_fitness = total_pop_fitness + float(lineage.split(',')[1])*int(lineage.split(',')[2])
+                    total_pop_fitness = total_pop_fitness + (self.target - abs(self.target-float(lineage.split(',')[1])))*int(lineage.split(',')[2])
 
                 average_pop_fitness = float(total_pop_fitness)/population_size
                 abres_rel_abund = float(abres_pop_size)/population_size
@@ -438,11 +438,11 @@ class Population(object):
 
                         abund_lin += 1
 
-                        subpop_rel_fitness = subpop_fitness/average_pop_fitness
+                        subpop_rel_fitness = (self.target-abs(self.target - subpop_fitness))/average_pop_fitness
                         top_lineages.write(str(current_gen) + "," + str(subpop_id) + "," + str(rel_abund) + "," + str(subpop_count) + "," + str(subpop_fitness) + "," + str(subpop_rel_fitness) + "," + str(subpop_genform) + "," + str(subpop_barcode) + "\n")
 
 
-                pop_stat_out.write(str(self.time) + ',' + str(self.time/self.generation_time) + ',' + str(population_size) + ',' + str(lineage_count) + ',' + str(average_pop_fitness) + ',' + str(abres_pop_size) + ',' + str(abres_rel_abund) + ',' + str(average_ab_fitness) + ',' + str(abund_lin) + '\n')
+                pop_stat_out.write(str(self.time) + ',' + str(current_gen) + ',' + str(population_size) + ',' + str(lineage_count) + ',' + str(average_pop_fitness) + ',' + str(abres_pop_size) + ',' + str(abres_rel_abund) + ',' + str(average_ab_fitness) + ',' + str(abund_lin) + '\n')
 
 
 
