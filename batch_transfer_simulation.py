@@ -224,6 +224,9 @@ class Population(object):
                         post_gi_mutation.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + '\n')
                     
                     #writing the original lineages data to the file
+                    if subpop_count <= 0:
+                        continue
+
                     post_gi_mutation.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + '\n')
 
 
@@ -300,7 +303,11 @@ class Population(object):
                             #writing out the data to the post growth file
                             post_growth.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + '\n')
 
+                    
                     #writing the original lineages data to the file
+                    
+                    if subpop_count <= 0:
+                        continue
                     post_growth.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + '\n')
 
                 post_growth.close()
@@ -368,7 +375,9 @@ class Population(object):
                     #writing out the information for the new mutants to a temporary file
                     new_subpopulations.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + '\n')
                     
-                    #writing the original lineages data to the file
+                #writing the original lineages data to the file
+                if subpop_count <= 0:
+                        continue
                 new_subpopulations.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + '\n')
 
             new_subpopulations.close()

@@ -228,6 +228,8 @@ class Population(object):
 
 
                 #writing the original lineages data to the file
+                if subpop_count <= 0:
+                    continue
                 post_gi_mutation.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + ',' + str(subpop_abstatus) + ',' + str(subpop_genform) + ',' + str(subpop_barcode) + '\n')
 
 
@@ -377,6 +379,8 @@ class Population(object):
                             post_growth.write(str(new_mutant_id) + ',' + str(subpop_fitness) + ',' + str(new_gd_ab_mutants) + ',' + '1' + ',' + str(new_mutant_genform) + ',' + str(new_mutant_barcode) + '\n')
 
                 #writing the original lineages data to the file
+                if subpop_count <= 0:
+                    continue
                 post_growth.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + ',' + str(subpop_abstatus) + ',' + str(subpop_genform) + ',' + str(subpop_barcode) + '\n')
 
             post_growth.close()
