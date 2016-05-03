@@ -33,7 +33,7 @@ class Population(object):
     ## gd_mut_rate = growth dependent mutation rate
     ## gi_mut_rate = growth independent mutation rate
     
-    def __init__(self, pop_dens, volume, generations_per_day, total_generations, batch_length,generation_length, gd_mut_rate, gi_mut_rate,target):
+    def __init__(self, pop_dens, volume, generations_per_day, total_generations, batch_length,generation_length, gd_mut_rate, gi_mut_rate, gd_ab_mut_rate, gi_ab_mut_rate,target):
         self.pop_dens = pop_dens
         self.volume = volume
         self.generations_per_day = generations_per_day
@@ -42,6 +42,8 @@ class Population(object):
         self.generation_length = generation_length
         self.gd_mut_rate = gd_mut_rate
         self.gi_mut_rate = gi_mut_rate
+        self.gd_ab_mut_rate = gd_ab_mut_rate
+        self.gi_ab_mut_rate = gi_ab_mut_rate
         self.target = target
         
     def initialize(self):
@@ -58,7 +60,7 @@ class Population(object):
         #creating a csv file that will keep track of all of the subpopulations
 
         subpopulations = open('subpopulations.csv','w')
-        subpopulations.write("1,1.0,%s,1,0,0" %(self.pop_size))
+        subpopulations.write("1,1.0,%s,1,0,0,0" %(self.pop_size))
         subpopulations.close()
         
         #setting the current generation to 0
@@ -75,13 +77,13 @@ class Population(object):
 
         #opening file to store output data
         pop_stat_out = open("population_statistics.csv",'w')
-        pop_stat_out.write('gen,pop_size,lineage_count,ave_fit,maxfit,abund_lin\n')
-        pop_stat_out.write('0,0,' + str(self.pop_size) + ',1,1,1.0,1\n') 
+        pop_stat_out.write('gen,pop_size,lineage_count,ave_fit,maxfit,abund_lin,freq_res,fit_res\n')
+        pop_stat_out.write('0,0,' + str(self.pop_size) + ',1,1,1.0,1,0.0,0\n') 
         pop_stat_out.close()
 
         top_lineages = open("top_lineages.csv","w")
-        top_lineages.write('gen,id,rel_abund,total_abund,fitness,rel_fitness,gen_form,cycleform,barcode\n')
-        top_lineages.write('0,0,1.0,' + str(self.pop_size) + ',1.0,1.0,0,0,0\n')
+        top_lineages.write('gen,id,rel_abund,total_abund,fitness,rel_fitness,gen_form,cycleform,barcode,abstatus\n')
+        top_lineages.write('0,0,1.0,' + str(self.pop_size) + ',1.0,1.0,0,0,0,0\n')
 
         top_lineages.close()
 
@@ -115,6 +117,7 @@ class Population(object):
                 subpop_cycleform = int(subpop.split(",")[3])
                 subpop_genform = int(subpop.split(",")[4])
                 subpop_barcode = str(subpop.split(",")[5])
+                subpop_ab_stat = (subpop.split(",")[6])
 
 
                 #implementing random death process only if there is an extant member of the lineage, otherwise drop 
@@ -125,7 +128,7 @@ class Population(object):
 
                     #writing out the lineage to the post transfer file as long as the 
                     if num_survivors > 0:    
-                        post_transfer.write(subpop_id + ',' + str(subpop_fitness) + ',' + str(num_survivors) + ',' + str(subpop_cycleform) + ',' + str(subpop_genform) + ',' + str(subpop_barcode) + '\n')
+                        post_transfer.write(subpop_id + ',' + str(subpop_fitness) + ',' + str(num_survivors) + ',' + str(subpop_cycleform) + ',' + str(subpop_genform) + ',' + str(subpop_barcode) + ',' + str(subpop_ab_stat) + '\n')
 
             #closing the post transfer file so that it can be used in a loop later
             post_transfer.close()
@@ -143,6 +146,8 @@ class Population(object):
                 total_pop_size = 0
                 total_fitness = 0.0
                 currentfit = 0.0
+                total_ab_size = 0
+                total_ab_fitness = 0
 
                 #looping through lineages in the post transfer file
                 for lineage in open('post_transfer.csv'):
@@ -158,6 +163,15 @@ class Population(object):
 
 
                 average_fitness = total_fitness/total_pop_size
+
+                if lineage.split(',')[6] == '1':
+                    total_ab_size = int(total_ab_size) + int(lineage.split('')[2])
+                    total_ab_fitness = total_ab_fitness + (self.target - (self.target- float(lineage.split(',')[1])))*int(lineage.split(',')[2])
+
+                if int(total_ab_size) > 0:
+                    average_ab_fitness = total_ab_fitness/total_ab_size 
+                else:
+                    average_ab_fitness = 0.0
 
                 num_progeny = total_pop_size * 2
 
@@ -185,6 +199,8 @@ class Population(object):
                     subpop_cycleform = int(subpop_post.split(',')[3])
                     subpop_genform = int(subpop_post.split(',')[4])
                     subpop_barcode = str(subpop_post.split(',')[5])
+                    subpop_ab_stat = (subpop_post.split(",")[6])
+
 
                     #determining the number of new growth independent mutants to generate
                     new_gi_mutants = np.random.poisson(subpop_count*self.gi_mut_rate)
@@ -221,13 +237,30 @@ class Population(object):
 
 
                         #writing out the information for the new mutants to a temporary file
-                        post_gi_mutation.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + '\n')
+                        post_gi_mutation.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + ',' + str(subpop_ab_stat) + '\n')
                     
                     #writing the original lineages data to the file
                     if subpop_count <= 0:
                         continue
 
-                    post_gi_mutation.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + '\n')
+                    if subpop_ab_stat == '0':
+
+                        new_gi_ab_mutants = np.random.poisson(subpop_count*self.gi_ab_mut_rate)
+                        subpop_count = subpop_count - new_gi_ab_mutants
+
+                        if new_gi_ab_mutants > 0:
+
+                            self.subpop_id_num += 1
+                            new_mutant_id = self.subpop_id_num
+                            new_mutant_genform = current_generation
+                            new_mutant_cycleform = cycle_generation
+                            new_mutant_barcode = str(subpop_barcode) + ':' + str(new_mutant_id)
+                            post_gi_mutation.write(str(new_mutant_id) + ',' + str(subpop_fitness) + ',' + str(new_gi_ab_mutants) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + ',1,\n')
+
+                    if subpop_count <= 0:
+                        continue
+
+                    post_gi_mutation.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + ',' + str(subpop_ab_stat) + '\n')
 
 
                 post_gi_mutation.close()
@@ -250,6 +283,8 @@ class Population(object):
                     subpop_cycleform = int(lineage.split(',')[3])
                     subpop_genform = int(lineage.split(',')[4])
                     subpop_barcode = str(lineage.split(',')[5])
+                    subpop_ab_stat = (lineage.split(',')[6])
+
                 
                     #SELECTION THINGS WITH HIGHER FITNESS DO BETTER
 
@@ -301,14 +336,32 @@ class Population(object):
                             new_mutant_barcode = str(subpop_barcode) + ":" + str(new_mutant_id)
     
                             #writing out the data to the post growth file
-                            post_growth.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + '\n')
+                            post_growth.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + ',' + str(subpop_ab_stat) + '\n')
 
                     
                     #writing the original lineages data to the file
                     
                     if subpop_count <= 0:
                         continue
-                    post_growth.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + '\n')
+
+                    if subpop_ab_stat == '0':
+
+                        new_gd_ab_mutants = np.random.poisson((daughters - new_gd_mutants)*self.gd_ab_mut_rate)
+                        subpop_count = subpop_count - new_gd_ab_mutants
+
+                        if new_gi_ab_mutants > 0:
+
+                            self.subpop_id_num += 1
+                            new_mutant_id = self.subpop_id_num
+                            new_mutant_genform = current_generation
+                            new_mutant_cycleform = cycle_generation
+                            new_mutant_barcode = str(subpop_barcode) + ':' + str(new_mutant_id)
+                            post_growth.write(str(new_mutant_id) + ',' + str(subpop_fitness) + ',' + str(new_gi_ab_mutants) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + ',1,\n')
+
+                    if subpop_count <= 0:
+                        continue
+
+                    post_growth.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + ',' + str(subpop_ab_stat) + '\n')
 
                 post_growth.close()
 
@@ -331,7 +384,7 @@ class Population(object):
                 subpop_cycleform = int(subpop_post.split(',')[3])
                 subpop_genform = int(subpop_post.split(',')[4])
                 subpop_barcode = str(subpop_post.split(',')[5])
-
+                subpop_ab_stat = (subpop_post.split(',')[6])
 
                 #calculating amount of time in stationary phase
                 
@@ -367,18 +420,37 @@ class Population(object):
                     #setting the count of the new mutant equal to 1
                     new_mutant_count = 1
 
-                    new_mutant_cycleform = cycle_generation
+                    new_mutant_cycleform = 11
                     new_mutant_genform = current_generation
                     new_mutant_barcode = str(subpop_barcode) + ":" + str(new_mutant_id)
 
 
                     #writing out the information for the new mutants to a temporary file
-                    new_subpopulations.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + '\n')
+                    new_subpopulations.write(str(new_mutant_id) + ',' + str(new_mutant_fitness) + ',' + str(new_mutant_count) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + ',' + str(subpop_ab_stat) + '\n')
                     
                 #writing the original lineages data to the file
                 if subpop_count <= 0:
                         continue
-                new_subpopulations.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + '\n')
+                
+                if subpop_ab_stat == '0':
+
+                    new_gi_ab_mutants = np.random.poisson(subpop_count*self.gi_ab_mut_rate*stationary_phase_time)
+                    subpop_count = subpop_count - new_gi_ab_mutants
+
+                    if new_gi_ab_mutants > 0:
+
+                        self.subpop_id_num += 1
+                        new_mutant_id = self.subpop_id_num
+                        new_mutant_genform = current_generation
+                        new_mutant_cycleform = 11
+                        new_mutant_barcode = str(subpop_barcode) + ':' + str(new_mutant_id)
+                        new_subpopulations.write(str(new_mutant_id) + ',' + str(subpop_fitness) + ',' + str(new_gi_ab_mutants) + "," + str(new_mutant_cycleform) + "," + str(new_mutant_genform) + "," + str(new_mutant_barcode) + ',1,\n')
+
+                    if subpop_count <= 0:
+                        continue
+
+
+                new_subpopulations.write(str(subpop_id) + ',' + str(subpop_fitness) + ',' + str(subpop_count) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + ',' + str(subpop_ab_stat) + '\n')
 
             new_subpopulations.close()
 
@@ -393,6 +465,8 @@ class Population(object):
             currentfit = 0.0
             maxfit = 0.0
             lineage_count = 0
+            total_ab_size = 0
+            total_ab_fitness = 0.0
 
             print current_generation
 
@@ -414,6 +488,12 @@ class Population(object):
                 if (self.target-abs(self.target - subpop_fitness)) > maxfit:
                     maxfit = currentfit
 
+                if lineage.split(',')[6] == '1':
+                    total_ab_size = int(total_ab_size) + int(lineage.split('')[2])
+                    total_ab_fitness = total_ab_fitness + (self.target - (self.target- float(lineage.split(',')[1])))*int(lineage.split(',')[2])
+
+            average_ab_fitness = total_ab_fitness/total_ab_size 
+
             average_fitness = float(total_fitness)/float(total_pop_size)
 
             num_abund_lineages = 0
@@ -430,6 +510,7 @@ class Population(object):
                 subpop_cycleform = int(subpop.split(',')[3])
                 subpop_genform = int(subpop.split(',')[4])                
                 subpop_barcode = str(subpop.split(',')[5])
+                subpop_ab_stat = str(subpop.split(',')[6])
 
                 if int(subpop_count) > int(total_pop_size/1000):
 
@@ -438,13 +519,15 @@ class Population(object):
                     subpop_rel_fitness = (self.target-abs(self.target - subpop_fitness))/average_fitness
                     subpop_rel_abund = float(subpop_count)/float(total_pop_size)
 
-                    top_lineages.write(str(current_generation) + "," + str(subpop_id) + "," + str(subpop_rel_abund) + "," + str(subpop_count) + "," + str(subpop_fitness) + "," + str(subpop_rel_fitness) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + "\n")
+                    top_lineages.write(str(current_generation) + "," + str(subpop_id) + "," + str(subpop_rel_abund) + "," + str(subpop_count) + "," + str(subpop_fitness) + "," + str(subpop_rel_fitness) + "," + str(subpop_cycleform) + "," + str(subpop_genform) + "," + str(subpop_barcode) + ',' + str(subpop_ab_stat) + "\n")
 
 
             #print average_fitness
             #print total_pop_size
 
-            pop_stat_out.write(str(current_generation) + "," + str(total_pop_size)  + ',' + str(lineage_count) + "," + str(average_fitness) + "," + str(maxfit) + "," + str(num_abund_lineages) + "\n")
+            freq_ab = total_ab_size / float(total_pop_size)
+
+            pop_stat_out.write(str(current_generation) + "," + str(total_pop_size)  + ',' + str(lineage_count) + "," + str(average_fitness) + "," + str(maxfit) + "," + str(num_abund_lineages) + ',' + str(freq_ab) + ',' + str(average_ab_fitness) + "\n")
 
             pop_stat_out.close()
 
@@ -452,7 +535,7 @@ class Population(object):
 
 #def __init__(self, pop_dens, volume, generations_per_day, total_generations, batch_length,generation_length, gd_mut_rate, gi_mut_rate):   
 
-exp_evol = Population(3000000,5,10,1000,24,1,0.0006,0.00015,2.5)
+exp_evol = Population(3000000000,5,10,1000,24,1,0.0006,0.00015,0.00000012,0.0000000055,2.0)
 
 exp_evol.initialize()
 
